@@ -6,20 +6,16 @@ import math
 import os
 import queue
 import threading
-from typing import Any
+from typing import Any, Callable
 
 import matplotlib
-
-matplotlib.use("TkAgg")
-
-import matplotlib
-import numpy as np
 
 matplotlib.use("TkAgg")
 
 import tkinter as tk
 from tkinter import ttk
 
+import numpy as np
 import serial
 import tkintermapview
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -40,6 +36,11 @@ from .coverage_model import (
 
 DEFAULT_MAP_CENTER = (39.5, -98.35)
 DEFAULT_MAP_ZOOM = 4
+APP_BACKGROUND = "#f3f6fb"
+SURFACE_BACKGROUND = "#ffffff"
+TEXT_PRIMARY = "#172033"
+TEXT_MUTED = "#667085"
+ACCENT = "#2563eb"
 
 
 # Tk event handlers live here; worker threads communicate through queues.
@@ -95,37 +96,180 @@ class RFDesktopApp:
 
     def _configure_styles(self) -> None:
         style = ttk.Style(self.root)
-        if "vista" in style.theme_names():
-            style.theme_use("vista")
-        style.configure("Title.TLabel", font=("Segoe UI", 18, "bold"))
-        style.configure("MetricValue.TLabel", font=("Segoe UI", 22, "bold"))
+        if "clam" in style.theme_names():
+            style.theme_use("clam")
+        self.root.configure(background=APP_BACKGROUND)
+        style.configure(".", font=("Segoe UI", 10), foreground=TEXT_PRIMARY)
+        style.configure("TFrame", background=APP_BACKGROUND)
+        style.configure("Surface.TFrame", background=SURFACE_BACKGROUND)
+        style.configure("Card.TFrame", background=SURFACE_BACKGROUND)
+        style.configure(
+            "Surface.TLabelframe",
+            background=SURFACE_BACKGROUND,
+            bordercolor="#d9e1ed",
+            relief="solid",
+        )
+        style.configure(
+            "Surface.TLabelframe.Label",
+            font=("Segoe UI", 10, "bold"),
+            foreground=TEXT_PRIMARY,
+            background=SURFACE_BACKGROUND,
+        )
+        style.configure(
+            "Title.TLabel",
+            font=("Segoe UI", 23, "bold"),
+            foreground=TEXT_PRIMARY,
+            background=APP_BACKGROUND,
+        )
+        style.configure(
+            "Subtitle.TLabel",
+            font=("Segoe UI", 10),
+            foreground=TEXT_MUTED,
+            background=APP_BACKGROUND,
+        )
+        style.configure(
+            "Section.TLabel",
+            font=("Segoe UI", 12, "bold"),
+            foreground=TEXT_PRIMARY,
+            background=APP_BACKGROUND,
+        )
+        style.configure(
+            "FieldHeading.TLabel",
+            font=("Segoe UI", 9, "bold"),
+            foreground=TEXT_MUTED,
+            background=APP_BACKGROUND,
+        )
+        style.configure(
+            "ScaleValue.TLabel",
+            font=("Segoe UI", 9, "bold"),
+            foreground=ACCENT,
+            background=APP_BACKGROUND,
+        )
+        style.configure(
+            "CardTitle.TLabel",
+            font=("Segoe UI", 9, "bold"),
+            foreground=TEXT_MUTED,
+            background=SURFACE_BACKGROUND,
+        )
+        style.configure(
+            "MetricValue.TLabel",
+            font=("Segoe UI", 21, "bold"),
+            foreground=TEXT_PRIMARY,
+            background=SURFACE_BACKGROUND,
+        )
         style.configure("MetricName.TLabel", font=("Segoe UI", 10))
-        style.configure("Good.TLabel", foreground="#166534")
-        style.configure("Warning.TLabel", foreground="#9a3412")
-        style.configure("Error.TLabel", foreground="#b91c1c")
+        style.configure("Good.TLabel", foreground="#166534", background=APP_BACKGROUND)
+        style.configure(
+            "Warning.TLabel", foreground="#9a3412", background=APP_BACKGROUND
+        )
+        style.configure("Error.TLabel", foreground="#b91c1c", background=APP_BACKGROUND)
+        style.configure(
+            "TLabelFrame",
+            background=APP_BACKGROUND,
+            bordercolor="#d9e1ed",
+            relief="solid",
+        )
+        style.configure(
+            "TLabelframe.Label",
+            font=("Segoe UI", 10, "bold"),
+            foreground=TEXT_PRIMARY,
+            background=APP_BACKGROUND,
+        )
+        style.configure("TButton", padding=(12, 7), background="#e8edf5", borderwidth=0)
+        style.map(
+            "TButton",
+            background=[("active", "#dbe5f2"), ("pressed", "#cbd8e8")],
+            foreground=[("disabled", "#98a2b3")],
+        )
+        style.configure(
+            "Primary.TButton",
+            padding=(14, 8),
+            background=ACCENT,
+            foreground="#ffffff",
+            borderwidth=0,
+            font=("Segoe UI", 10, "bold"),
+        )
+        style.map(
+            "Primary.TButton",
+            background=[("active", "#1d4ed8"), ("pressed", "#1e40af")],
+            foreground=[("disabled", "#dbeafe")],
+        )
+        style.configure("TNotebook", background=APP_BACKGROUND, borderwidth=0)
+        style.configure(
+            "TNotebook.Tab",
+            padding=(16, 9),
+            background="#e8edf5",
+            foreground=TEXT_MUTED,
+            font=("Segoe UI", 10, "bold"),
+        )
+        style.map(
+            "TNotebook.Tab",
+            background=[("selected", SURFACE_BACKGROUND), ("active", "#e0e8f3")],
+            foreground=[("selected", ACCENT), ("active", TEXT_PRIMARY)],
+        )
+        style.configure(
+            "Horizontal.TScale", background=APP_BACKGROUND, troughcolor="#dbe4f0"
+        )
+        style.configure(
+            "TPanedwindow", background=APP_BACKGROUND, sashwidth=8, sashrelief="flat"
+        )
+        style.configure("TSeparator", background="#d9e1ed", foreground="#d9e1ed")
+        style.configure(
+            "Step.TLabel",
+            font=("Segoe UI", 10, "bold"),
+            foreground=ACCENT,
+            background="#eaf1ff",
+            padding=(9, 7),
+        )
+        style.configure(
+            "LineStatus.TLabel",
+            font=("Segoe UI", 10, "bold"),
+            foreground=TEXT_PRIMARY,
+            background=SURFACE_BACKGROUND,
+            padding=(8, 5),
+        )
+        style.configure(
+            "LineGood.TLabel",
+            font=("Segoe UI", 10, "bold"),
+            foreground="#15803d",
+            background=SURFACE_BACKGROUND,
+            padding=(8, 5),
+        )
+        style.configure(
+            "LineBlocked.TLabel",
+            font=("Segoe UI", 10, "bold"),
+            foreground="#dc2626",
+            background=SURFACE_BACKGROUND,
+            padding=(8, 5),
+        )
 
     def _build_ui(self) -> None:
-        container = ttk.Frame(self.root, padding=12)
+        container = ttk.Frame(self.root, padding=(22, 18))
         container.pack(fill="both", expand=True)
+        header = ttk.Frame(container)
+        header.pack(fill="x", pady=(0, 16))
+        ttk.Label(header, text="Radio Range Monitor", style="Title.TLabel").pack(
+            anchor="w"
+        )
         ttk.Label(
-            container,
-            text="Radio Performance & Coverage Monitor",
-            style="Title.TLabel",
-        ).pack(anchor="w", pady=(0, 10))
+            header,
+            text="Live telemetry, RF coverage planning, and terrain line-of-sight",
+            style="Subtitle.TLabel",
+        ).pack(anchor="w", pady=(3, 0))
         self.notebook = ttk.Notebook(container)
         self.notebook.pack(fill="both", expand=True)
-        self.dashboard_tab = ttk.Frame(self.notebook, padding=12)
-        self.map_tab = ttk.Frame(self.notebook, padding=8)
-        self.notebook.add(self.dashboard_tab, text="Live Hardware Dashboard")
+        self.dashboard_tab = ttk.Frame(self.notebook, padding=18)
+        self.map_tab = ttk.Frame(self.notebook, padding=12)
+        self.notebook.add(self.dashboard_tab, text="Overview")
         self.notebook.add(self.map_tab, text="Map & Terrain")
         self._build_dashboard_tab()
         self._build_map_tab()
 
     def _build_dashboard_tab(self) -> None:
         ports_frame = ttk.LabelFrame(
-            self.dashboard_tab, text="Hardware connections", padding=10
+            self.dashboard_tab, text="  DEVICE CONNECTIONS  ", padding=(14, 10)
         )
-        ports_frame.pack(fill="x", pady=(0, 10))
+        ports_frame.pack(fill="x", pady=(0, 14))
         port_rows = (
             ("Meshtastic node", self.mesh_port_var, "mesh"),
             ("NanoVNA", self.nanovna_port_var, "nanovna"),
@@ -145,6 +289,7 @@ class RFDesktopApp:
             button = ttk.Button(
                 ports_frame,
                 text="Connect" if role == "mesh" else "Start",
+                style="Primary.TButton",
                 command=(
                     self.connect_meshtastic
                     if role == "mesh"
@@ -162,8 +307,11 @@ class RFDesktopApp:
         )
         ports_frame.columnconfigure(1, weight=1)
 
+        ttk.Label(
+            self.dashboard_tab, text="Live telemetry", style="Section.TLabel"
+        ).pack(anchor="w", pady=(2, 8))
         metrics = ttk.Frame(self.dashboard_tab)
-        metrics.pack(fill="x", pady=8)
+        metrics.pack(fill="x", pady=(0, 14))
         self.metric_vars: dict[str, tk.StringVar] = {}
         for column, (key, title) in enumerate(
             (
@@ -174,12 +322,21 @@ class RFDesktopApp:
                 ("distance_m", "Node Distance"),
             )
         ):
-            card = ttk.LabelFrame(metrics, text=title, padding=12)
-            card.grid(row=0, column=column, sticky="nsew", padx=4)
+            card = ttk.Frame(
+                metrics,
+                style="Card.TFrame",
+                padding=(12, 11),
+                relief="solid",
+                borderwidth=1,
+            )
+            card.grid(row=0, column=column, sticky="nsew", padx=4, ipady=3)
+            ttk.Label(card, text=title.upper(), style="CardTitle.TLabel").pack(
+                anchor="w"
+            )
             variable = tk.StringVar(value="—")
             self.metric_vars[key] = variable
             ttk.Label(card, textvariable=variable, style="MetricValue.TLabel").pack(
-                anchor="center", pady=12
+                anchor="w", pady=(10, 4)
             )
             metrics.columnconfigure(column, weight=1)
 
@@ -187,10 +344,13 @@ class RFDesktopApp:
         ttk.Label(
             self.dashboard_tab,
             textvariable=self.hardware_status_var,
+            style="Subtitle.TLabel",
             wraplength=1200,
-        ).pack(fill="x", anchor="w", pady=(2, 8))
+        ).pack(fill="x", anchor="w", pady=(0, 12))
         recommendations = ttk.LabelFrame(
-            self.dashboard_tab, text="Localized improvement suggestions", padding=10
+            self.dashboard_tab,
+            text="  RADIO HEALTH & SUGGESTIONS  ",
+            padding=(14, 10),
         )
         recommendations.pack(fill="both", expand=True)
         self.recommendations = tk.Text(
@@ -199,13 +359,24 @@ class RFDesktopApp:
             wrap="word",
             state="disabled",
             font=("Segoe UI", 10),
+            background=SURFACE_BACKGROUND,
+            foreground=TEXT_PRIMARY,
+            insertbackground=ACCENT,
+            selectbackground="#dbeafe",
+            selectforeground=TEXT_PRIMARY,
+            relief="flat",
+            borderwidth=0,
+            padx=8,
+            pady=8,
+            highlightthickness=0,
         )
         self.recommendations.pack(fill="both", expand=True)
         ttk.Label(
             self.dashboard_tab,
-            text="Set a real Home Base location in the map tab for meaningful range measurements.",
+            text="Choose a real profile start point on the map for localized range measurements.",
+            style="Subtitle.TLabel",
             wraplength=1200,
-        ).pack(anchor="w", pady=(8, 0))
+        ).pack(anchor="w", pady=(12, 0))
 
     def _build_map_tab(self) -> None:
         body = ttk.Frame(self.map_tab)
@@ -213,7 +384,11 @@ class RFDesktopApp:
         controls_container = ttk.Frame(body, width=310)
         controls_container.pack(side="left", fill="y")
         controls_canvas = tk.Canvas(
-            controls_container, width=290, highlightthickness=0, borderwidth=0
+            controls_container,
+            width=290,
+            highlightthickness=0,
+            borderwidth=0,
+            background=APP_BACKGROUND,
         )
         controls_scrollbar = ttk.Scrollbar(
             controls_container, orient="vertical", command=controls_canvas.yview
@@ -241,35 +416,77 @@ class RFDesktopApp:
         map_frame.pack(side="left", fill="both", expand=True)
         map_and_profile = ttk.Panedwindow(map_frame, orient=tk.VERTICAL)
         map_and_profile.pack(fill="both", expand=True)
-        map_view_frame = ttk.Frame(map_and_profile)
+        map_view_frame = ttk.Frame(map_and_profile, style="Surface.TFrame", padding=4)
         terrain_frame = ttk.LabelFrame(
-            map_and_profile, text="Terrain profile", padding=(8, 4)
+            map_and_profile,
+            text="  TERRAIN PROFILE  ",
+            padding=(10, 7),
+            style="Surface.TLabelframe",
         )
         map_and_profile.add(map_view_frame, weight=3)
         map_and_profile.add(terrain_frame, weight=2)
 
-        ttk.Label(controls, text="Home Base", style="Title.TLabel").pack(
+        ttk.Label(controls, text="PROFILE", style="Section.TLabel").pack(
             anchor="w", pady=(0, 4)
+        )
+        self.point_selection_status_var = tk.StringVar(
+            value="Step 1 of 2 — click the map to select a start point."
         )
         ttk.Label(
             controls,
-            text="Click the map to choose a start point, then an end point to "
-            "fetch their terrain profile. "
-            "Right-click to place Home Base or the target manually.",
+            textvariable=self.point_selection_status_var,
+            style="Step.TLabel",
+            wraplength=270,
+            justify="left",
+        ).pack(anchor="w", pady=(0, 6))
+        ttk.Label(
+            controls,
+            text="Click once for the start, then again for the end. The terrain "
+            "profile loads automatically. You can also enter coordinates below.",
             wraplength=270,
         ).pack(anchor="w", pady=(0, 8))
-        self._coordinate_field(controls, "Latitude", self.home_lat_var)
-        self._coordinate_field(controls, "Longitude", self.home_lon_var)
+        ttk.Label(controls, text="START POINT", style="FieldHeading.TLabel").pack(
+            anchor="w", pady=(3, 1)
+        )
+        self._coordinate_field(
+            controls,
+            "Latitude",
+            self.home_lat_var,
+            self.apply_home_coordinates,
+        )
+        self._coordinate_field(
+            controls,
+            "Longitude",
+            self.home_lon_var,
+            self.apply_home_coordinates,
+        )
         ttk.Button(
-            controls, text="Apply Home Base", command=self.apply_home_coordinates
-        ).pack(fill="x", pady=(4, 12))
+            controls,
+            text="Set start point",
+            style="Primary.TButton",
+            command=self.apply_home_coordinates,
+        ).pack(fill="x", pady=(5, 10))
         ttk.Separator(controls).pack(fill="x", pady=4)
-        ttk.Label(controls, text="Virtual target / node").pack(anchor="w", pady=(4, 2))
-        self._coordinate_field(controls, "Latitude", self.target_lat_var)
-        self._coordinate_field(controls, "Longitude", self.target_lon_var)
+        ttk.Label(controls, text="END POINT", style="FieldHeading.TLabel").pack(
+            anchor="w", pady=(5, 1)
+        )
+        self._coordinate_field(
+            controls,
+            "Latitude",
+            self.target_lat_var,
+            self.apply_target_coordinates,
+        )
+        self._coordinate_field(
+            controls,
+            "Longitude",
+            self.target_lon_var,
+            self.apply_target_coordinates,
+        )
         ttk.Button(
-            controls, text="Place target", command=self.apply_target_coordinates
-        ).pack(fill="x", pady=(4, 5))
+            controls,
+            text="Set end point",
+            command=self.apply_target_coordinates,
+        ).pack(fill="x", pady=(5, 5))
         ttk.Button(
             controls,
             text="Use latest Meshtastic GPS",
@@ -377,11 +594,13 @@ class RFDesktopApp:
             pass_coords=True,
         )
         self.map_link_status_var = tk.StringVar(value="Link LOS: select two points.")
-        ttk.Label(
+        self.map_link_status_label = ttk.Label(
             map_view_frame,
             textvariable=self.map_link_status_var,
+            style="LineStatus.TLabel",
             anchor="e",
-        ).pack(fill="x")
+        )
+        self.map_link_status_label.pack(fill="x")
         ttk.Label(
             map_view_frame,
             text="Map tiles © OpenStreetMap contributors | Hata overlay is an urban-model estimate.",
@@ -391,12 +610,27 @@ class RFDesktopApp:
 
     @staticmethod
     def _coordinate_field(
-        parent: ttk.Frame, label: str, variable: tk.StringVar
+        parent: ttk.Frame,
+        label: str,
+        variable: tk.StringVar,
+        on_enter: Callable[[], None] | None = None,
     ) -> None:
         row = ttk.Frame(parent)
         row.pack(fill="x", pady=2)
         ttk.Label(row, text=label, width=11).pack(side="left")
-        ttk.Entry(row, textvariable=variable).pack(side="left", fill="x", expand=True)
+        entry = ttk.Entry(row, textvariable=variable)
+        entry.pack(side="left", fill="x", expand=True)
+        if on_enter is not None:
+            entry.bind(
+                "<Return>",
+                lambda event: RFDesktopApp._submit_coordinate(event, on_enter),
+            )
+
+    @staticmethod
+    def _submit_coordinate(event: tk.Event, callback: Callable[[], None]) -> str:
+        del event
+        callback()
+        return "break"
 
     def _scale_control(
         self,
@@ -407,26 +641,54 @@ class RFDesktopApp:
         maximum: float,
         resolution: float,
     ) -> None:
-        ttk.Label(parent, text=label).pack(anchor="w", pady=(4, 0))
-        scale = tk.Scale(
+        heading = ttk.Frame(parent)
+        heading.pack(fill="x", pady=(7, 0))
+        ttk.Label(heading, text=label, wraplength=195).pack(side="left", anchor="w")
+        value_var = tk.StringVar(value=f"{variable.get():g}")
+        ttk.Label(heading, textvariable=value_var, style="ScaleValue.TLabel").pack(
+            side="right"
+        )
+        scale = ttk.Scale(
             parent,
             variable=variable,
             from_=minimum,
             to=maximum,
-            resolution=resolution,
             orient="horizontal",
-            showvalue=True,
-            command=self._coverage_control_changed,
-            length=250,
+            command=lambda value: self._scale_value_changed(
+                value, value_var, variable, minimum, resolution
+            ),
         )
-        scale.pack(fill="x")
+        scale.pack(fill="x", pady=(1, 0))
+        bounds = ttk.Frame(parent)
+        bounds.pack(fill="x")
+        ttk.Label(bounds, text=f"{minimum:g}", style="Subtitle.TLabel").pack(
+            side="left"
+        )
+        ttk.Label(bounds, text=f"{maximum:g}", style="Subtitle.TLabel").pack(
+            side="right"
+        )
+
+    def _scale_value_changed(
+        self,
+        value: str,
+        display_var: tk.StringVar,
+        variable: tk.DoubleVar,
+        minimum: float,
+        resolution: float,
+    ) -> None:
+        numeric_value = float(value)
+        snapped = minimum + round((numeric_value - minimum) / resolution) * resolution
+        variable.set(snapped)
+        display_var.set(f"{snapped:g}")
+        self.schedule_coverage_update()
 
     def _build_terrain_panel(self, parent: ttk.Frame) -> None:
         toolbar = ttk.Frame(parent)
         toolbar.pack(fill="x", pady=(0, 8))
         ttk.Button(
             toolbar,
-            text="Fetch terrain profile for selected points",
+            text="Build profile",
+            style="Primary.TButton",
             command=self.fetch_terrain,
         ).pack(side="left")
         ttk.Button(
@@ -435,7 +697,7 @@ class RFDesktopApp:
             command=self.reset_profile_points,
         ).pack(side="left", padx=(6, 0))
         self.terrain_status_var = tk.StringVar(
-            value="Click the map to select a start point, then an end point."
+            value="Select two points on the map to build a terrain profile."
         )
         ttk.Label(
             toolbar,
@@ -447,7 +709,7 @@ class RFDesktopApp:
         self.axes.set_title("Terrain cross-section")
         self.axes.set_xlabel("Distance from start point (m)")
         self.axes.set_ylabel("Elevation (m)")
-        self.axes.grid(True, alpha=0.25)
+        self._style_terrain_axes()
         self.figure_canvas = FigureCanvasTkAgg(self.figure, master=parent)
         self.figure_canvas.get_tk_widget().pack(fill="both", expand=True)
         ttk.Label(
@@ -582,6 +844,21 @@ class RFDesktopApp:
     def _map_select_profile_point(self, coordinates: tuple[float, float]) -> None:
         if self._map_next_point_is_start:
             self._map_set_home(coordinates)
+            self._clear_profile_result()
+            if self.target_marker is not None:
+                self.target_marker.delete()
+                self.target_marker = None
+            if self.link_path is not None:
+                self.link_path.delete()
+                self.link_path = None
+            self.target_lat_var.set("")
+            self.target_lon_var.set("")
+            self.link_los_blocked = None
+            self.map_link_status_var.set("Link LOS: select an end point.")
+            self.map_link_status_label.configure(style="LineStatus.TLabel")
+            self.point_selection_status_var.set(
+                "Step 2 of 2 — click the map to select an end point."
+            )
             self.terrain_status_var.set(
                 "Start point selected. Click the map again to choose the end point."
             )
@@ -590,12 +867,14 @@ class RFDesktopApp:
 
         self._map_set_target(coordinates)
         self._map_next_point_is_start = True
+        self.point_selection_status_var.set(
+            "Both points selected — requesting the terrain profile."
+        )
         self.fetch_terrain()
 
     def reset_profile_points(self) -> None:
         self._map_next_point_is_start = True
-        self.terrain_generation += 1
-        self.terrain_thread = None
+        self._clear_profile_result()
         self.coverage_generation += 1
         self._input_signature = None
         try:
@@ -617,6 +896,10 @@ class RFDesktopApp:
         self.target_lon_var.set("")
         self.link_los_blocked = None
         self.map_link_status_var.set("Link LOS: select two points.")
+        self.map_link_status_label.configure(style="LineStatus.TLabel")
+        self.point_selection_status_var.set(
+            "Step 1 of 2 — click the map to select a start point."
+        )
         with TELEMETRY_LOCK:
             TELEMETRY["home_lat"] = float(os.getenv("HOME_LAT", "0"))
             TELEMETRY["home_lon"] = float(os.getenv("HOME_LON", "0"))
@@ -628,15 +911,32 @@ class RFDesktopApp:
             "Select a start point on the map to recalculate coverage."
         )
 
+        self.terrain_status_var.set(
+            "Points cleared. Click the map to select a start point, then an end point."
+        )
+
+    def _clear_profile_result(self) -> None:
+        self.terrain_generation += 1
         self.axes.clear()
         self.axes.set_title("Terrain cross-section")
         self.axes.set_xlabel("Distance from start point (m)")
         self.axes.set_ylabel("Elevation (m)")
-        self.axes.grid(True, alpha=0.25)
+        self._style_terrain_axes()
         self.figure_canvas.draw_idle()
-        self.terrain_status_var.set(
-            "Points cleared. Click the map to select a start point, then an end point."
-        )
+
+    def _style_terrain_axes(self) -> None:
+        self.figure.set_facecolor(SURFACE_BACKGROUND)
+        self.axes.set_facecolor(SURFACE_BACKGROUND)
+        self.axes.tick_params(colors=TEXT_MUTED, labelsize=8)
+        self.axes.xaxis.label.set_color(TEXT_MUTED)
+        self.axes.yaxis.label.set_color(TEXT_MUTED)
+        self.axes.title.set_color(TEXT_PRIMARY)
+        self.axes.title.set_fontsize(11)
+        self.axes.grid(True, color="#dfe5ee", linewidth=0.8, alpha=0.8)
+        for side in ("top", "right"):
+            self.axes.spines[side].set_visible(False)
+        for side in ("left", "bottom"):
+            self.axes.spines[side].set_color("#cbd5e1")
 
     @staticmethod
     def _parse_coordinates(lat_text: str, lon_text: str) -> tuple[float, float]:
@@ -662,6 +962,11 @@ class RFDesktopApp:
         self.home_marker = self.map_widget.set_marker(
             latitude, longitude, text="Home Base", marker_color_circle="#166534"
         )
+        if not initial:
+            self._map_next_point_is_start = False
+            self.point_selection_status_var.set(
+                "Start point set — select or enter the end point."
+            )
         if initial:
             self.map_widget.set_position(latitude, longitude)
         self.schedule_coverage_update()
@@ -691,6 +996,11 @@ class RFDesktopApp:
         )
         self.link_los_blocked = None
         self.map_link_status_var.set("Link LOS: waiting for terrain profile.")
+        self.map_link_status_label.configure(style="LineStatus.TLabel")
+        self._map_next_point_is_start = True
+        self.point_selection_status_var.set(
+            "Both points set — load the terrain profile or select a new start point."
+        )
         self.map_widget.set_position(latitude, longitude)
         self.terrain_status_var.set(
             "Target set. Fetch the terrain profile to load 50 elevation samples."
@@ -849,11 +1159,13 @@ class RFDesktopApp:
             self.terrain_status_var.set(f"Cannot fetch terrain: {exc}")
             return
         if self.terrain_thread is not None and self.terrain_thread.is_alive():
-            self.terrain_status_var.set("Terrain request already in progress.")
+            self.terrain_status_var.set(
+                "A terrain request is already running. Retry after it finishes."
+            )
             return
         self.terrain_generation += 1
         generation = self.terrain_generation
-        self.terrain_status_var.set("Requesting 50 Open-Elevation samples...")
+        self.terrain_status_var.set("Requesting 50 elevation samples...")
 
         def fetch() -> None:
             try:
@@ -930,13 +1242,16 @@ class RFDesktopApp:
         self.axes.set_title("Selected Start → End Terrain Cross-Section")
         self.axes.set_xlabel("Distance from start point (m)")
         self.axes.set_ylabel("Elevation (m)")
-        self.axes.grid(True, alpha=0.25)
+        self._style_terrain_axes()
         self.axes.legend(loc="best")
         self.figure_canvas.draw_idle()
         self._set_link_line_of_sight(blocked)
         self.terrain_status_var.set(
             f"LOS {'BLOCKED' if blocked else 'CLEAR'} — "
             f"{total_distance / 1000:.2f} km; curvature included."
+        )
+        self.point_selection_status_var.set(
+            "Profile ready — click the map to choose a new start point."
         )
 
     def _set_link_line_of_sight(self, blocked: bool) -> None:
@@ -956,6 +1271,9 @@ class RFDesktopApp:
 
         status = "BLOCKED" if blocked else "CLEAR"
         color = "#dc2626" if blocked else "#16a34a"
+        self.map_link_status_label.configure(
+            style="LineBlocked.TLabel" if blocked else "LineGood.TLabel"
+        )
         self.link_path = self.map_widget.set_path(
             [start, end],
             color=color,
@@ -979,6 +1297,9 @@ class RFDesktopApp:
                     if generation == self.terrain_generation:
                         self.terrain_status_var.set(
                             f"Terrain request failed: {message}"
+                        )
+                        self.point_selection_status_var.set(
+                            "Profile failed — click the map to choose a new start point."
                         )
                 elif event == "coverage":
                     generation, result, parameters = payload

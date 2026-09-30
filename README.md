@@ -37,8 +37,8 @@ python -m pip install .
 ```
 
 Launch the all-in-one RF monitor. The interactive map and terrain cross-section
-are shown together on the Map & Terrain tab; clicking the map selects the target
-and requests its profile.
+are shown together on the Map & Terrain tab; two map clicks choose profile
+endpoints and request the terrain profile.
 
 ```powershell
 python -m radio_range_monitor

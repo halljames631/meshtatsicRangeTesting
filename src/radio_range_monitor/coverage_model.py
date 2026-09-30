@@ -491,7 +491,7 @@ def fetch_elevation_profile(
     end_lon: float,
     samples: int = 50,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Fetch a 50-point Open-Elevation profile and apply Earth curvature."""
+    """Fetch an elevation profile and apply Earth-curvature correction."""
     fractions = np.linspace(0.0, 1.0, samples)
     lat1, lon1 = math.radians(start_lat), math.radians(start_lon)
     lat2, lon2 = math.radians(end_lat), math.radians(end_lon)
