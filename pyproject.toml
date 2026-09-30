@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "radio-range-monitor"
+version = "0.1.0"
+description = "Tkinter desktop tools for Meshtastic monitoring and RF coverage planning"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "matplotlib",
+    "meshtastic",
+    "numpy",
+    "Pillow",
+    "pyserial",
+    "requests",
+    "tkintermapview",
+]
+
+[project.optional-dependencies]
+dev = ["ruff"]
+
+[project.gui-scripts]
+radio-monitor = "radio_range_monitor.dashboard:main"
+rf-coverage-monitor = "radio_range_monitor.dashboard:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["radio_range_monitor*"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["radio_range_monitor"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
